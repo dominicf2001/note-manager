@@ -15,12 +15,22 @@
   :lighter " Notes"
   :keymap notes-mode-map)
 
-;; FUNCTIONS
+;; HELPERS
+
+(defun insert-yaml-into-buffer (buffer)
+  (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
+    (with-current-buffer buffer
+      (insert (format "---\ntitle: %s\ndate: %s\n---" name current-date))
+      (save-buffer))))
+
+;; INTERACTIVES
 
 (defun create-note (note-name)
   "Creates a new note in note-directory and opens its buffer"
   (interactive "sEnter the note name: ")
-
-  (let ((full-note-name (concat note-name ".org")))
-    (find-file (concat notes-directory full-note-name))))
+  
+  (let* ((full-note-name (concat note-name ".org"))
+         (full-note-path (concat notes-directory full-note-name))
+         (note-buffer (find-file full-note-path)))
+    (insert-yaml-into-buffer note-buffer)))
 
