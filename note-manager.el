@@ -8,14 +8,12 @@
 
 ;; SETUP MINOR MODE
 
-(keymap-set )
+(keymap-set notes-mode-map "C-c n" 'create-note)
 
 (define-minor-mode notes-mode
   "Minor mode for managing notes"
   :lighter " Notes"
-  :keymap)
-
-
+  :keymap notes-mode-map)
 
 ;; FUNCTIONS
 
@@ -23,9 +21,6 @@
   "Creates a new note in note-directory and opens its buffer"
   (interactive "sEnter the note name: ")
 
-  (let full-note-name (concat note-name ".org"))
-  (find-file (concat notes-directory full-note-name)))
-
-
-
+  (let ((full-note-name (concat note-name ".org")))
+    (find-file (concat notes-directory full-note-name))))
 
