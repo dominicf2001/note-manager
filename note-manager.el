@@ -8,7 +8,8 @@
   "Keymap for 'notes-mode'.
 \\{notes-mode-map}")
 
-(keymap-set notes-mode-map "C-c n" 'create-note)
+(keymap-set notes-mode-map "C-c n c" 'create-note)
+(keymap-set notes-mode-map "C-c n f" 'find-note-by-title)
 
 ;; SETUP MINOR MODE
 
@@ -17,7 +18,40 @@
   :lighter " Notes"
   :keymap notes-mode-map)
 
+(string-search "title:" "title: dsd.org")
+(split-string "title: dsd.org" ":")
+(string-clean-whitespace "  fdsfd")
+
 ;; HELPERS
+
+(defun parse-yaml-list (list-string)
+  (let ((unparsed-elements (split-string list-string ","))
+        (build-list (lambda (list pos)
+                      (if (nth pos list)
+                          (let ((target-string (nth pos unparsed-elements)))
+                            (when (string-match "\\\"\\([^\"]+\\)\\\"" target-string)
+                              (cons list '(match-string-no-properties 1 target-string)))
+                            (funcall build-list (+ pos 1) list))
+                        (list)))))
+    (funcall build-list '() 1)))
+
+(parse-yaml-list "[\"philosophy\", \"psychology\"]")
+
+(defun note-has-tags-p (full-note-name)
+  (let* ((tags (split-string (read-string "Tag(s)")))
+         (full-note-path (concat note-directory full-note-name))
+         (note-buffer (find-file full-note-path))
+         (get-tag-list (lambda ()
+                         (let ((current-line (thing-at-point 'line 1)))
+                           (if (string-search "tags:" current-line)
+                               (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
+                             (forward-line)
+                             (funcall get-tag-list))))))
+    (with-current-buffer note-buffer
+      (save-excursion
+        (goto-char (point-min))
+        (funcall get-tag-list)
+        ))))
 
 (defun insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
@@ -26,12 +60,12 @@
       (save-buffer))))
 
 (defun find-note (&optional predicate)
-  (let* ((note-files (directory-files notes-directory-path predicate))
-         (note-name (ido-completing-read+ "Note name: " note-files))
-         (full-note-path (concat notes-directory-path note-name)))
+  (let* ((note-files (directory-files notes-directory-path))
+         (full-note-name (ido-completing-read+ "Note name: " note-files predicate))
+         (full-note-path (concat notes-directory-path full-note-name)))
     (if (file-exists-p full-note-path)
         (find-file (concat full-note-path))
-      (create-note note-name))))
+      (create-note (file-name-sans-extension note-name)))))
 
 ;; INTERACTIVES
 
@@ -48,6 +82,7 @@
   (interactive)
   (find-note))
 
-(defun find-note-by-title-and-tag ()
+(defun find-note-by-tags-and-title ()
+  "Find a note by tag(s). Seperate each tag by a space"
   (interactive)
-  (find-note )) 
+  (find-note 'note-has-tags-p))
