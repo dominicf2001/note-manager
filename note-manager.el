@@ -25,17 +25,15 @@
 ;; HELPERS
 
 (defun parse-yaml-list (list-string)
-  (let ((unparsed-elements (split-string list-string ","))
-        (build-list (lambda (list pos)
-                      (if (nth pos list)
-                          (let ((target-string (nth pos unparsed-elements)))
-                            (when (string-match "\\\"\\([^\"]+\\)\\\"" target-string)
-                              (cons list '(match-string-no-properties 1 target-string)))
-                            (funcall build-list (+ pos 1) list))
-                        (list)))))
-    (funcall build-list '() 1)))
-
-(parse-yaml-list "[\"philosophy\", \"psychology\"]")
+  (let* ((unparsed-elements (split-string list-string ","))
+         (build-list (lambda (list pos)
+                       (if (nth pos unparsed-elements)
+                           (let ((target-string (nth pos unparsed-elements)))
+                             (when (string-match "\\\"\\([^\"]+\\)\\\"" target-string)
+                               (setq list (cons (match-string-no-properties 1 target-string) list)))
+                             (funcall build-list list (+ pos 1)))
+                         (nreverse list)))))
+    (funcall build-list '() 0)))
 
 (defun note-has-tags-p (full-note-name)
   (let* ((tags (split-string (read-string "Tag(s)")))
