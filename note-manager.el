@@ -1,6 +1,5 @@
 ;; GLOBALS
-
-(defvar notes-directory-path "~/Documents/notes/" "The directory note-manager will look when performing note actions")
+(defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
 
 ;; KEYBINDING
 
@@ -26,33 +25,32 @@
                        (if (nth pos unparsed-elements)
                            (let ((target-string (nth pos unparsed-elements)))
                              (when (string-match "\\\"\\([^\"]+\\)\\\"" target-string)
-                               (setq list (cons (match-string-no-properties t target-string) list)))
+                               (setq list (cons (match-string-no-properties 1 target-string) list)))
                              (funcall build-list list (+ pos 1)))
                          (nreverse list)))))
     (funcall build-list '() 0)))
 
-(defun note-has-tags-p (full-note-name)
-  (let* ((input-tags (split-string (read-string "Tag(s)")))
-         (full-note-path (concat notes-directory-path full-note-name))
-         (note-buffer (find-file full-note-path))
+(defun note-has-tags-p (full-note-name input-tags)
+  (let* ((full-note-path (concat notes-directory-path full-note-name))
+         (note-buffer (find-file-noselect full-note-path))
          (get-tag-list (lambda ()
-                         (let ((current-line (thing-at-point 'line 1))
-                               (has-tags t))
-                           (if (string-search "tags:" current-line)
-                               (progn
-                                 (let ((note-tags (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))))
-                                   (dolist (input-tag input-tags has-tags)
-                                     (unless (member input-tag note-tags)
-                                       (setq has-tags nil)))))
+                         (if (eobp)
+                             nil
+                           (let ((current-line (thing-at-point 'line 1))
+                                 (has-tags t))
+                             (if (string-search "tags:" current-line)
                                  (progn
-                                   (forward-line)
-                                   (funcall get-tag-list)))))))
-         (with-current-buffer note-buffer
-           (save-excursion
-             (goto-char (point-min))
-             (funcall get-tag-list)))))
-
-(note-has-tags-p "test.org")
+                                   (let ((note-tags (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))))
+                                     (dolist (input-tag input-tags has-tags)
+                                       (unless (member input-tag note-tags)
+                                         (setq has-tags nil)))))
+                               (progn
+                                 (forward-line)
+                                 (funcall get-tag-list))))))))
+    (with-current-buffer note-buffer
+      (save-excursion
+        (goto-char (point-min))
+        (funcall get-tag-list)))))
 
 (defun insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
@@ -86,4 +84,5 @@
 (defun find-note-by-tags-and-title ()
   "Find a note by tag(s). Seperate each tag by a space"
   (interactive)
-  (find-note 'note-has-tags-p))
+  (let ((input-tags (completing-read-multiple "Tag(s)" '("philosophy" "psychology"))))
+    (find-note (lambda (full-note-name) (note-has-tags-p full-note-name input-tags)))))
