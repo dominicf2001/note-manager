@@ -1,5 +1,6 @@
 ;; GLOBALS
 (defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
+(defvar defined-tags '("philosophy" "psychology" "c1" "c2"))
 
 ;; KEYBINDING
 
@@ -81,8 +82,18 @@
   (interactive)
   (find-note))
 
+(cons 1 '(1 2))
+
 (defun find-note-by-tags-and-title ()
   "Find a note by tag(s). Seperate each tag by a space"
   (interactive)
-  (let ((input-tags (completing-read-multiple "Tag(s)" '("philosophy" "psychology"))))
+  (let ((continue t)
+        (input-tags '()))
+    
+    (while continue
+      (let ((input))
+        (setq input (ido-completing-read+ (concat "Tags " (concat (prin1-to-string input-tags t) ": ")) defined-tags))
+        (if (equal input "y")
+            (setq continue nil)
+          (setq input-tags (cons input input-tags)))))
     (find-note (lambda (full-note-name) (note-has-tags-p full-note-name input-tags)))))
