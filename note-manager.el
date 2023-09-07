@@ -18,10 +18,6 @@
   :lighter " Notes"
   :keymap notes-mode-map)
 
-(string-search "title:" "title: dsd.org")
-(split-string "title: dsd.org" ":")
-(string-clean-whitespace "  fdsfd")
-
 ;; HELPERS
 
 (defun parse-yaml-list (list-string)
@@ -30,26 +26,33 @@
                        (if (nth pos unparsed-elements)
                            (let ((target-string (nth pos unparsed-elements)))
                              (when (string-match "\\\"\\([^\"]+\\)\\\"" target-string)
-                               (setq list (cons (match-string-no-properties 1 target-string) list)))
+                               (setq list (cons (match-string-no-properties t target-string) list)))
                              (funcall build-list list (+ pos 1)))
                          (nreverse list)))))
     (funcall build-list '() 0)))
 
 (defun note-has-tags-p (full-note-name)
-  (let* ((tags (split-string (read-string "Tag(s)")))
-         (full-note-path (concat note-directory full-note-name))
+  (let* ((input-tags (split-string (read-string "Tag(s)")))
+         (full-note-path (concat notes-directory-path full-note-name))
          (note-buffer (find-file full-note-path))
          (get-tag-list (lambda ()
-                         (let ((current-line (thing-at-point 'line 1)))
+                         (let ((current-line (thing-at-point 'line 1))
+                               (has-tags t))
                            (if (string-search "tags:" current-line)
-                               (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
-                             (forward-line)
-                             (funcall get-tag-list))))))
-    (with-current-buffer note-buffer
-      (save-excursion
-        (goto-char (point-min))
-        (funcall get-tag-list)
-        ))))
+                               (progn
+                                 (let ((note-tags (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))))
+                                   (dolist (input-tag input-tags has-tags)
+                                     (unless (member input-tag note-tags)
+                                       (setq has-tags nil)))))
+                                 (progn
+                                   (forward-line)
+                                   (funcall get-tag-list)))))))
+         (with-current-buffer note-buffer
+           (save-excursion
+             (goto-char (point-min))
+             (funcall get-tag-list)))))
+
+(note-has-tags-p "test.org")
 
 (defun insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
