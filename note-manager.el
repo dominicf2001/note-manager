@@ -1,6 +1,7 @@
 ;; GLOBALS
 (defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
-(defvar defined-tags '("philosophy" "psychology" "c1" "c2"))
+(setq defined-tags '("philosophy" "psychology" "c1" "c2" "[done]"))
+
 
 ;; KEYBINDING
 
@@ -37,21 +38,20 @@
          (get-tag-list (lambda ()
                          (if (eobp)
                              nil
-                           (let ((current-line (thing-at-point 'line 1))
-                                 (has-tags t))
-                             (if (string-search "tags:" current-line)
-                                 (progn
-                                   (let ((note-tags (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))))
-                                     (dolist (input-tag input-tags has-tags)
-                                       (unless (member input-tag note-tags)
-                                         (setq has-tags nil)))))
+                           (let ((current-line (thing-at-point 'line 1)))
+                             (if (and current-line (string-search "tags:" current-line))
+                                 (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
                                (progn
                                  (forward-line)
                                  (funcall get-tag-list))))))))
     (with-current-buffer note-buffer
       (save-excursion
         (goto-char (point-min))
-        (funcall get-tag-list)))))
+        (let ((tag-list (funcall get-tag-list))
+              (has-tags t))
+          (dolist (input-tag input-tags has-tags)
+            (unless (member input-tag tag-list)
+              (setq has-tags nil))))))))
 
 (defun insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
@@ -63,6 +63,7 @@
   (let* ((note-files (directory-files notes-directory-path))
          (full-note-name (ido-completing-read+ "Note name: " note-files predicate))
          (full-note-path (concat notes-directory-path full-note-name)))
+    (message "FULL NOTE PATH: %s" full-note-path)
     (if (file-exists-p full-note-path)
         (find-file (concat full-note-path))
       (create-note (file-name-sans-extension note-name)))))
@@ -82,18 +83,16 @@
   (interactive)
   (find-note))
 
-(cons 1 '(1 2))
-
 (defun find-note-by-tags-and-title ()
-  "Find a note by tag(s). Seperate each tag by a space"
+  "Find a note by tag(s)"
   (interactive)
   (let ((continue t)
-        (input-tags '()))
+        (input-tags '())
+        (input))
     
     (while continue
-      (let ((input))
-        (setq input (ido-completing-read+ (concat "Tags " (concat (prin1-to-string input-tags t) ": ")) defined-tags))
-        (if (equal input "y")
-            (setq continue nil)
-          (setq input-tags (cons input input-tags)))))
-    (find-note (lambda (full-note-name) (note-has-tags-p full-note-name input-tags)))))
+      (setq input (ido-completing-read+ (concat "Tags " (concat (prin1-to-string input-tags t) ": ")) defined-tags))
+      (if (equal input "[done]")
+          (setq continue nil)
+        (setq input-tags (cons input input-tags))))
+    (find-note (lambda (full-note-name) (message full-note-name) (note-has-tags-p full-note-name input-tags)))))

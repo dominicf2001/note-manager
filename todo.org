@@ -22,3 +22,10 @@
 ** Asks for input for note name
 ** creates file in specified notes directory
 ** Opens a buffer for that note
+
+
+----
+
+* New items
+** Handle an empty tag and title search
+** remove selected tags from list for other selections
