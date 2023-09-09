@@ -88,10 +88,17 @@
   (interactive)
   (let ((continue t)
         (input-tags '())
-        (input))
+        (input)
+        (unselected-tags '()))
     
     (while continue
-      (setq input (ido-completing-read+ (concat "Tags " (concat (prin1-to-string input-tags t) ": ")) defined-tags))
+      (setq unselected-tags '())
+      (dolist (defined-tag defined-tags unselected-tags)
+        (unless (member defined-tag input-tags)
+          (setq unselected-tags (cons defined-tag unselected-tags))))
+      
+      (setq input (ido-completing-read+ (concat "Tags " (concat (prin1-to-string input-tags t) ": ")) unselected-tags))
+      
       (if (equal input "[done]")
           (setq continue nil)
         (setq input-tags (cons input input-tags))))
