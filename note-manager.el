@@ -1,7 +1,6 @@
 ;; GLOBALS
 (defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
-(setq defined-tags '("philosophy" "psychology" "c1" "c2" "[done]"))
-
+(setq defined-tags '("[done]" "philosophy" "psychology" "c1" "c2"))
 
 ;; KEYBINDING
 
@@ -44,8 +43,8 @@
                                (progn
                                  (forward-line)
                                  (funcall get-tag-list))))))))
-    (with-current-buffer note-buffer
-      (save-excursion
+    (save-excursion
+      (with-current-buffer note-buffer
         (goto-char (point-min))
         (let ((tag-list (funcall get-tag-list))
               (has-tags t))
@@ -59,14 +58,25 @@
       (insert (format "---\nname: %s\ndate: %s\ntags: []\n---" name current-date))
       (save-buffer))))
 
+(defun filter-list (list predicate)
+  (let ((filtered-list '()))
+    (dolist (list-item list filtered-list)
+      (when (funcall predicate list-item)
+        (setq filtered-list (cons list-item filtered-list))))))
+
 (defun find-note (&optional predicate)
-  (let* ((note-files (directory-files notes-directory-path))
-         (full-note-name (ido-completing-read+ "Note name: " note-files predicate))
-         (full-note-path (concat notes-directory-path full-note-name)))
-    (message "FULL NOTE PATH: %s" full-note-path)
-    (if (file-exists-p full-note-path)
-        (find-file (concat full-note-path))
-      (create-note (file-name-sans-extension note-name)))))
+  (let* ((full-note-names (directory-files notes-directory-path))
+         (filtered-full-note-names (filter-full-note-names full-note-names predicate)))
+    
+    (if filtered-full-note-names
+        (let* ((full-note-name (ido-completing-read+ "Note name: " filtered-full-note-names))
+               (full-note-path (concat notes-directory-path full-note-name)))
+          
+          (unless (file-directory-p full-note-path)
+            (if (file-exists-p full-note-path)
+                (find-file (concat full-note-path))
+              (create-note (file-name-sans-extension full-note-name)))))
+      (message "No results"))))
 
 ;; INTERACTIVES
 
@@ -102,4 +112,4 @@
       (if (equal input "[done]")
           (setq continue nil)
         (setq input-tags (cons input input-tags))))
-    (find-note (lambda (full-note-name) (message full-note-name) (note-has-tags-p full-note-name input-tags)))))
+    (find-note (lambda (full-note-name) (note-has-tags-p full-note-name input-tags)))))

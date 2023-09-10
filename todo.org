@@ -28,6 +28,7 @@
 
 * New items
 ** Handle an empty tag and title search
-** remove selected tags from list for other selections
 ** Need a function to add tags automatically
 *** All available tags need to be stored in a file/data structure
+** Start the minor mode upon the start of org mode
+*** Exit when org mode exited
