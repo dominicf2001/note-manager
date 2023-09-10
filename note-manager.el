@@ -66,7 +66,9 @@
 
 (defun find-note (&optional predicate)
   (let* ((full-note-names (directory-files notes-directory-path))
-         (filtered-full-note-names (filter-full-note-names full-note-names predicate)))
+         (filtered-full-note-names (if predicate
+                                       (filter-full-note-names full-note-names predicate)
+                                     full-note-names)))
     
     (if filtered-full-note-names
         (let* ((full-note-name (ido-completing-read+ "Note name: " filtered-full-note-names))
