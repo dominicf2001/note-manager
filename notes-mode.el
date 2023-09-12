@@ -1,3 +1,10 @@
+;;; nodes-mode.el --- A minor mode for note management
+
+;; Author: Dominic Ferrando <dominicf2001@gmail.com>
+;; Version: 0.1.0
+;; URL: https://github.com/dominicf2001/notes-mode
+
+
 ;; GLOBALS
 (defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
 (setq defined-tags '("[done]" "philosophy" "psychology" "c1" "c2"))
@@ -8,8 +15,8 @@
   "Keymap for 'notes-mode'.
 \\{notes-mode-map}")
 
-(keymap-set notes-mode-map "C-c n c" 'create-note)
-(keymap-set notes-mode-map "C-c n f" 'find-note-by-title)
+(keymap-set notes-mode-map "C-c n c" 'notes-create)
+(keymap-set notes-mode-map "C-c n f" 'notes-find-by-title)
 
 ;; SETUP MINOR MODE
 
@@ -20,7 +27,7 @@
 
 ;; HELPERS
 
-(defun parse-yaml-list (list-string)
+(defun notes-parse-yaml-list (list-string)
   (let* ((unparsed-elements (split-string list-string ","))
          (build-list (lambda (list pos)
                        (if (nth pos unparsed-elements)
@@ -31,7 +38,7 @@
                          (nreverse list)))))
     (funcall build-list '() 0)))
 
-(defun note-has-tags-p (full-note-name input-tags)
+(defun notes-has-tags-p (full-note-name input-tags)
   (let* ((full-note-path (concat notes-directory-path full-note-name))
          (note-buffer (find-file-noselect full-note-path))
          (get-tag-list (lambda ()
@@ -39,7 +46,7 @@
                              nil
                            (let ((current-line (thing-at-point 'line 1)))
                              (if (and current-line (string-search "tags:" current-line))
-                                 (parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
+                                 (notes-parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
                                (progn
                                  (forward-line)
                                  (funcall get-tag-list))))))))
@@ -52,24 +59,23 @@
             (unless (member input-tag tag-list)
               (setq has-tags nil))))))))
 
-(defun insert-yaml-into-buffer (buffer)
+(defun notes-insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
     (with-current-buffer buffer
       (insert (format "---\nname: %s\ndate: %s\ntags: []\n---" name current-date))
       (save-buffer))))
 
-(defun filter-list (list predicate)
+(defun notes-filter-list (list predicate)
   (let ((filtered-list '()))
     (dolist (list-item list filtered-list)
       (when (funcall predicate list-item)
         (setq filtered-list (cons list-item filtered-list))))))
 
-(defun find-note (&optional predicate)
+(defun notes-find (&optional predicate)
   (let* ((full-note-names (directory-files notes-directory-path))
          (filtered-full-note-names (if predicate
-                                       (filter-full-note-names full-note-names predicate)
+                                       (notes-filter-list full-note-names predicate)
                                      full-note-names)))
-    
     (if filtered-full-note-names
         (let* ((full-note-name (ido-completing-read+ "Note name: " filtered-full-note-names))
                (full-note-path (concat notes-directory-path full-note-name)))
@@ -77,25 +83,25 @@
           (unless (file-directory-p full-note-path)
             (if (file-exists-p full-note-path)
                 (find-file (concat full-note-path))
-              (create-note (file-name-sans-extension full-note-name)))))
+              (notes-create (file-name-sans-extension full-note-name)))))
       (message "No results"))))
 
 ;; INTERACTIVES
 
-(defun create-note (note-name)
+(defun notes-create (note-name)
   "Creates a new note in note-directory and opens its buffer"
   (interactive "sNote name: ")
   
   (let* ((full-note-name (concat note-name ".org"))
          (full-note-path (concat notes-directory-path full-note-name))
          (note-buffer (find-file full-note-path)))
-    (insert-yaml-into-buffer note-buffer)))
+    (notes-insert-yaml-into-buffer note-buffer)))
 
-(defun find-note-by-title ()
+(defun notes-find-by-title ()
   (interactive)
-  (find-note))
+  (notes-find))
 
-(defun find-note-by-tags-and-title ()
+(defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
   (interactive)
   (let ((continue t)
@@ -114,4 +120,6 @@
       (if (equal input "[done]")
           (setq continue nil)
         (setq input-tags (cons input input-tags))))
-    (find-note (lambda (full-note-name) (note-has-tags-p full-note-name input-tags)))))
+    (notes-find (lambda (full-note-name) (notes-has-tags-p full-note-name input-tags)))))
+
+(provide 'notes-mode)
