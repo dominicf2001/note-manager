@@ -128,7 +128,9 @@
         (message "Test")
         (search-forward "]")
         (backward-char)
-        (insert ", \"" input-tag "\"")))))
+        (if (string-search "[]" current-line)
+            (insert "\"" input-tag "\"")
+          (insert ", \"" input-tag "\""))))))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
