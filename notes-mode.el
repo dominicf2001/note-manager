@@ -112,9 +112,10 @@
   "Adds a tag to current file"
   (interactive)
   (save-excursion
+    (goto-char (point-min))
     (let ((current-line (thing-at-point 'line t))
           (found-tags-line nil)
-          (input-tag (ido-completing-read+ (concat "Tag: ")) defined-tags))
+          (input-tag (ido-completing-read+ "Tag: " defined-tags)))
       
       (while (and (not (eobp)) (not found-tags-line))
         (if (and current-line (string-search "tags:" current-line))
@@ -124,9 +125,10 @@
             (setq current-line (thing-at-point 'line t)))))
       
       (when found-tags-line
+        (message "Test")
         (search-forward "]")
         (backward-char)
-        (insert "\"" input-tag "\"")))))
+        (insert ", \"" input-tag "\"")))))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
