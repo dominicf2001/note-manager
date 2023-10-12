@@ -8,7 +8,7 @@
 
 (with-temp-buffer
   (unless (file-exists-p "tags")
-    (write-region "(\"[done]\")" nil "tags"))
+    (write-region "()" nil "tags"))
   
   (insert-file-contents "tags")
   (setq defined-tags (read (current-buffer))))
@@ -136,6 +136,7 @@
   "Find a note by tag(s)"
   (interactive)
   (let ((continue t)
+        (defined-tags (cons "[done]" defined-tags))
         (input-tags '())
         (input)
         (unselected-tags '()))
