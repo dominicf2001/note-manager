@@ -4,10 +4,17 @@
 ;; Version: 0.1.0
 ;; URL: https://github.com/dominicf2001/notes-mode
 
+;; LOAD/CREATE TAGS STORAGE FILE
+
+(with-temp-buffer
+  (unless (file-exists-p "tags")
+    (write-region "(\"[done]\")" nil "tags"))
+  
+  (insert-file-contents "tags")
+  (setq defined-tags (read (current-buffer))))
 
 ;; GLOBALS
-(defvar notes-directory-path "~/documents/notes/" "The directory note-manager will look when performing note actions")
-(setq defined-tags '("[done]" "philosophy" "psychology" "c1" "c2"))
+(defvar notes-directory-path "~/documents/notes/" "What note-manager will look to as the notes directory when performing note actions")
 
 ;; KEYBINDING
 
@@ -44,7 +51,7 @@
          (get-tag-list (lambda ()
                          (if (eobp)
                              nil
-                           (let ((current-line (thing-at-point 'line 1)))
+                           (let ((current-line (thing-at-point 'line t)))
                              (if (and current-line (string-search "tags:" current-line))
                                  (notes-parse-yaml-list (string-clean-whitespace (nth 1 (split-string current-line ":"))))
                                (progn
@@ -101,6 +108,26 @@
   (interactive)
   (notes-find))
 
+(defun notes-add-tag ()
+  "Adds a tag to current file"
+  (interactive)
+  (save-excursion
+    (let ((current-line (thing-at-point 'line t))
+          (found-tags-line nil)
+          (input-tag (ido-completing-read+ (concat "Tag: ")) defined-tags))
+      
+      (while (and (not (eobp)) (not found-tags-line))
+        (if (and current-line (string-search "tags:" current-line))
+            (setq found-tags-line t)
+          (progn
+            (forward-line)
+            (setq current-line (thing-at-point 'line t)))))
+      
+      (when found-tags-line
+        (search-forward "]")
+        (backward-char)
+        (insert "\"" input-tag "\"")))))
+
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
   (interactive)
@@ -120,6 +147,7 @@
       (if (equal input "[done]")
           (setq continue nil)
         (setq input-tags (cons input input-tags))))
+    
     (notes-find (lambda (full-note-name) (notes-has-tags-p full-note-name input-tags)))))
 
 (provide 'notes-mode)
