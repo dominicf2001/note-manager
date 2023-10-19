@@ -110,11 +110,16 @@
   (let* ((full-note-name (concat note-name ".org"))
          (full-note-path (concat notes-directory-path full-note-name))
          (note-buffer (find-file full-note-path)))
-    (notes-insert-yaml-into-buffer note-buffer)))
+    (unless (file-exists-p full-note-path)
+      (notes-insert-yaml-into-buffer note-buffer))))
+
+(defun notes-daily ()
+  (interactive)
+  (notes-create (format-time-string "%Y-%m-%d_daily")))
 
 (defun notes-find-by-title ()
   (interactive)
-  (notes-find))
+  (notes-create ())
 
 (defun notes-add-tag ()
   "Adds a tag to current file"
