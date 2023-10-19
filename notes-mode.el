@@ -71,7 +71,7 @@
 (defun notes-insert-yaml-into-buffer (buffer)
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
     (with-current-buffer buffer
-      (insert (format "---\nname: %s\ndate: %s\ntags: []\n---" name current-date))
+      (insert (format "---\nname: %s\ndate: %s\ntags: [, "sd"]\n---" name current-date))
       (save-buffer))))
 
 (defun notes-filter-list (list predicate)
@@ -141,13 +141,20 @@
           (insert ", \"" input-tag "\""))))))
 
 (defun notes-create-tag (new-tag-name)
-  (interactive "sTag: ")
+  (interactive "sTag name: ")
 
   (if (member new-tag-name defined-tags)
       (message "This tag already exists")
     (progn
       (setq defined-tags (cons new-tag-name defined-tags))
       (write-region (list-of-strings-to-string defined-tags) nil "tags"))))
+
+(defun notes-delete-tag ()
+  (interactive)
+
+  (let ((selected-tag-name (ido-completing-read+ "Tag name: " defined-tags)))
+    (setq defined-tags (delete selected-tag-name defined-tags))
+    (write-region (list-of-strings-to-string defined-tags) nil "tags")))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
