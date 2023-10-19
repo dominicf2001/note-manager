@@ -142,9 +142,12 @@
 
 (defun notes-create-tag (new-tag-name)
   (interactive "sTag: ")
-  (setq defined-tags (cons new-tag-name defined-tags))
-  
-  (write-region (list-of-strings-to-string defined-tags) nil "tags"))
+
+  (if (member new-tag-name defined-tags)
+      (message "This tag already exists")
+    (progn
+      (setq defined-tags (cons new-tag-name defined-tags))
+      (write-region (list-of-strings-to-string defined-tags) nil "tags"))))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
