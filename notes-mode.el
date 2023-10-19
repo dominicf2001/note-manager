@@ -4,7 +4,7 @@
 ;; Version: 0.1.0
 ;; URL: https://github.com/dominicf2001/notes-mode
 
-;; LOAD/CREATE TAGS STORAGE FILE
+;; LOAD TAGS STORAGE FILE
 
 (with-temp-buffer
   (unless (file-exists-p "tags")
@@ -14,7 +14,9 @@
   (setq defined-tags (read (current-buffer))))
 
 ;; GLOBALS
-(defvar notes-directory-path "~/documents/notes/" "What note-manager will look to as the notes directory when performing note actions")
+(defcustom notes-directory-path "~/documents/notes/"
+  "What note-manager will look to as the notes directory when performing note actions"
+  :type 'directory)
 
 ;; KEYBINDING
 
@@ -93,6 +95,12 @@
               (notes-create (file-name-sans-extension full-note-name)))))
       (message "No results"))))
 
+(defun list-of-strings-to-string (list)
+  (let ((list-string "("))
+    (dolist (item list (concat list-string ")"))
+      (message (format "%s" item))
+      (setq list-string (concat list-string (format "\"%s\" " item))))))
+
 ;; INTERACTIVES
 
 (defun notes-create (note-name)
@@ -131,6 +139,12 @@
         (if (string-search "[]" current-line)
             (insert "\"" input-tag "\"")
           (insert ", \"" input-tag "\""))))))
+
+(defun notes-create-tag (new-tag-name)
+  (interactive "sTag: ")
+  (setq defined-tags (cons new-tag-name defined-tags))
+  
+  (write-region (list-of-strings-to-string defined-tags) nil "tags"))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)"
