@@ -7,22 +7,27 @@
 
 ;;; code:
 
-;; LOAD TAGS STORAGE FILE
-
-(with-temp-buffer
-  (unless (file-exists-p "tags")
-    (write-region "()" nil "tags"))
-  
-  (insert-file-contents "tags")
-  (setq defined-tags (read (current-buffer))))
-
 ;; GLOBALS
 (defgroup "notes-mode" nil nil)
+
+(defcustom tags-file-path "~/.emacs.d/custom/notes-mode/tags"
+  "The file that tags will be stored in."
+  :type 'file
+  :group 'notes-mode)
 
 (defcustom notes-directory-path "~/documents/notes/"
   "The directory that notes will be stored in."
   :type 'directory
   :group 'notes-mode)
+
+;; LOAD TAGS STORAGE FILE
+
+(with-temp-buffer
+  (unless (file-exists-p tags-file-path)
+    (write-region "()" nil tags-file-path))
+  
+  (insert-file-contents tags-file-path)
+  (setq defined-tags (read (current-buffer))))
 
 ;; KEYBINDING
 
@@ -80,7 +85,7 @@
   "Insert the standard YAML section into BUFFER."
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
     (with-current-buffer buffer
-      (insert (format "---\nname: %s\ndate: %s\ntags: [, "test"]\n---\n\n* " name current-date))
+      (insert (format "---\nname: %s\ndate: %s\ntags: []\n---\n\n* " name current-date))
       (save-buffer))))
 
 (defun notes-filter-list (list predicate)
@@ -133,7 +138,7 @@
 (defun notes-find-by-title ()
   "Find a note by title."
   (interactive)
-  (notes-create ()))
+  (notes-find))
 
 (defun notes-add-tag ()
   "Add a tag to current note."
@@ -152,7 +157,6 @@
             (setq current-line (thing-at-point 'line t)))))
       
       (when found-tags-line
-        (message "Test")
         (search-forward "]")
         (backward-char)
         (if (string-search "[]" current-line)
