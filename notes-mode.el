@@ -1,8 +1,11 @@
 ;;; nodes-mode.el --- A minor mode for note management
+;;; Commentary:
 
 ;; Author: Dominic Ferrando <dominicf2001@gmail.com>
 ;; Version: 0.1.0
 ;; URL: https://github.com/dominicf2001/notes-mode
+
+;;; code:
 
 ;; LOAD TAGS STORAGE FILE
 
@@ -14,14 +17,17 @@
   (setq defined-tags (read (current-buffer))))
 
 ;; GLOBALS
+(defgroup "notes-mode" nil nil)
+
 (defcustom notes-directory-path "~/documents/notes/"
-  "What note-manager will look to as the notes directory when performing note actions"
-  :type 'directory)
+  "The directory that notes will be stored in."
+  :type 'directory
+  :group 'notes-mode)
 
 ;; KEYBINDING
 
 (defvar notes-mode-map (make-sparse-keymap)
-  "Keymap for 'notes-mode'.
+  "Keymap for \='notes-mode\='.
 \\{notes-mode-map}")
 
 (keymap-set notes-mode-map "C-c n c" 'notes-create)
@@ -30,13 +36,14 @@
 ;; SETUP MINOR MODE
 
 (define-minor-mode notes-mode
-  "Minor mode for managing notes"
+  "Minor mode for managing notes."
   :lighter " Notes"
   :keymap notes-mode-map)
 
 ;; HELPERS
 
 (defun notes-parse-yaml-list (list-string)
+  "Take a YAML LIST-STRING and return it as a Lisp style list."
   (let* ((unparsed-elements (split-string list-string ","))
          (build-list (lambda (list pos)
                        (if (nth pos unparsed-elements)
@@ -48,6 +55,7 @@
     (funcall build-list '() 0)))
 
 (defun notes-has-tags-p (full-note-name input-tags)
+  "Check if note: FULL-NOTE-NAME has any tags in INPUT-TAGS."
   (let* ((full-note-path (concat notes-directory-path full-note-name))
          (note-buffer (find-file-noselect full-note-path))
          (get-tag-list (lambda ()
@@ -69,18 +77,21 @@
               (setq has-tags nil))))))))
 
 (defun notes-insert-yaml-into-buffer (buffer)
+  "Insert the standard YAML section into BUFFER."
   (let ((name (file-name-sans-extension (buffer-name buffer))) (current-date (format-time-string "%Y-%m-%d")))
     (with-current-buffer buffer
-      (insert (format "---\nname: %s\ndate: %s\ntags: [, "sd"]\n---" name current-date))
+      (insert (format "---\nname: %s\ndate: %s\ntags: [, "test"]\n---\n\n* " name current-date))
       (save-buffer))))
 
 (defun notes-filter-list (list predicate)
+  "Filter LIST down to elements that satisify PREDICATE."
   (let ((filtered-list '()))
     (dolist (list-item list filtered-list)
       (when (funcall predicate list-item)
         (setq filtered-list (cons list-item filtered-list))))))
 
 (defun notes-find (&optional predicate)
+  "Find a note that optionally satisfies PREDICATE."
   (let* ((full-note-names (directory-files notes-directory-path))
          (filtered-full-note-names (if predicate
                                        (notes-filter-list full-note-names predicate)
@@ -96,6 +107,7 @@
       (message "No results"))))
 
 (defun list-of-strings-to-string (list)
+  "Convert list of strings: LIST into a string."
   (let ((list-string "("))
     (dolist (item list (concat list-string ")"))
       (message (format "%s" item))
@@ -104,7 +116,7 @@
 ;; INTERACTIVES
 
 (defun notes-create (note-name)
-  "Creates a new note in note-directory and opens its buffer"
+  "Create a new note with NOTE-NAME in note-directory and opens its buffer."
   (interactive "sNote name: ")
   
   (let* ((full-note-name (concat note-name ".org"))
@@ -114,15 +126,17 @@
       (notes-insert-yaml-into-buffer note-buffer))))
 
 (defun notes-daily ()
+  "Create a new daily note."
   (interactive)
   (notes-create (format-time-string "%Y-%m-%d_daily")))
 
 (defun notes-find-by-title ()
+  "Find a note by title."
   (interactive)
-  (notes-create ())
+  (notes-create ()))
 
 (defun notes-add-tag ()
-  "Adds a tag to current file"
+  "Add a tag to current note."
   (interactive)
   (save-excursion
     (goto-char (point-min))
@@ -146,6 +160,7 @@
           (insert ", \"" input-tag "\""))))))
 
 (defun notes-create-tag (new-tag-name)
+  "Create a new tag with NEW-TAG-NAME as its name."
   (interactive "sTag name: ")
 
   (if (member new-tag-name defined-tags)
@@ -155,6 +170,7 @@
       (write-region (list-of-strings-to-string defined-tags) nil "tags"))))
 
 (defun notes-delete-tag ()
+  "Delete a tag."
   (interactive)
 
   (let ((selected-tag-name (ido-completing-read+ "Tag name: " defined-tags)))
@@ -162,7 +178,7 @@
     (write-region (list-of-strings-to-string defined-tags) nil "tags")))
 
 (defun notes-find-by-tags-and-title ()
-  "Find a note by tag(s)"
+  "Find a note by tag(s)."
   (interactive)
   (let ((continue t)
         (defined-tags (cons "[done]" defined-tags))
@@ -185,3 +201,4 @@
     (notes-find (lambda (full-note-name) (notes-has-tags-p full-note-name input-tags)))))
 
 (provide 'notes-mode)
+;;; notes-mode.el ends here
