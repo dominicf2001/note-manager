@@ -171,7 +171,7 @@
       (message "This tag already exists")
     (progn
       (setq defined-tags (cons new-tag-name defined-tags))
-      (write-region (list-of-strings-to-string defined-tags) nil "tags"))))
+      (write-region (list-of-strings-to-string defined-tags) nil tags-file-path))))
 
 (defun notes-delete-tag ()
   "Delete a tag."
@@ -179,7 +179,7 @@
 
   (let ((selected-tag-name (ido-completing-read+ "Tag name: " defined-tags)))
     (setq defined-tags (delete selected-tag-name defined-tags))
-    (write-region (list-of-strings-to-string defined-tags) nil "tags")))
+    (write-region (list-of-strings-to-string defined-tags) nil tags-file-path)))
 
 (defun notes-find-by-tags-and-title ()
   "Find a note by tag(s)."
