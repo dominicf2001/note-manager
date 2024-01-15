@@ -10,7 +10,7 @@
 ;; GLOBALS
 (defgroup "notes-mode" nil nil)
 
-(defcustom tags-file-path "~/.emacs.d/custom/notes-mode/tags"
+(defcustom tags-file-path "~/.emacs.d/plugins/notes-mode/tags"
   "The file that tags will be stored in."
   :type 'file
   :group 'notes-mode)
@@ -35,8 +35,8 @@
   "Keymap for \='notes-mode\='.
 \\{notes-mode-map}")
 
-(keymap-set notes-mode-map "C-c n c" 'notes-create)
-(keymap-set notes-mode-map "C-c n f" 'notes-find-by-title)
+(define-key notes-mode-map (kbd "C-c n c") 'notes-create)
+(define-key notes-mode-map (kbd "C-c n f") 'notes-find-by-title)
 
 ;; SETUP MINOR MODE
 
